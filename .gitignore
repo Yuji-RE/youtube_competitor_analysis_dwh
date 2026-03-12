@@ -24,9 +24,6 @@ temp_source/
 # エディタ設定
 .vscode/
 
-# スキーマ・ドキュメント
-data/schemas/
-
 # チャンネル固有キーワード設定
 src/sql/keywords.sql
 
