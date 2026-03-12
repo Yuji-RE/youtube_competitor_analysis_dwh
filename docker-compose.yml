@@ -1,0 +1,17 @@
+  services:
+    postgres:
+      image: postgres:16
+      container_name: youtube_dwh_db
+      ports:
+        - "5432:5432"
+      environment:
+        POSTGRES_USER: yuji
+        POSTGRES_PASSWORD: password
+        POSTGRES_DB: youtube_dwh_db
+      volumes:
+        - pgdata:/var/lib/postgresql/data
+        - ./data/raw:/data/raw    # コンテナ内からCSVを読むため
+        - ./src/sql:/sql          # コンテナ内からSQLファイルを読むため
+
+  volumes:
+    pgdata:

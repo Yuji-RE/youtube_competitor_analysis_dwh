@@ -1,0 +1,36 @@
+# 環境変数・認証情報
+.env
+*.key
+*.pem
+
+# 自チャンネルの YouTube Analytics データ
+data/raw/daily/
+data/raw/organic_vs_paid/
+data/raw/subscription_source/
+data/raw/traffic_source/
+data/raw/content/
+
+# 競合データ（収集結果）
+data/raw/competitor/
+
+# 作業用一時ファイル
+temp_source/
+
+# メモ・ノート系 .md（README.md・docs/ 配下は除く）
+*.md
+!README.md
+!docs/*.md
+
+# エディタ設定
+.vscode/
+
+# スキーマ・ドキュメント
+data/schemas/
+
+# チャンネル固有キーワード設定
+src/sql/keywords.sql
+
+# Python
+__pycache__/
+*.pyc
+.venv/
