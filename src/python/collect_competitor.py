@@ -1,10 +1,12 @@
 # %% ライブラリをインポート
 import os
+import re
 import csv
 import json
+import math
 import time
 import itertools
-from datetime import datetime
+from datetime import datetime, date
 from dotenv import load_dotenv
 from googleapiclient.discovery import build
 
@@ -15,9 +17,9 @@ YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
 
 # 検索クエリ用（全キーワードリスト）
 GAME = os.getenv("GAME")
-OWN_ATTRIBUTES    = [kw.strip() for kw in os.getenv("OWN_ATTRIBUTE").split(",")]
-MAINSTREAM_ATTRS  = [kw.strip() for kw in os.getenv("MAINSTREAM_ATTRIBUTE").split(",")]
-SKILL_KEYWORDS    = [kw.strip() for kw in os.getenv("SKILL_KEYWORDS").split(",")]
+OWN_ATTRIBUTES = [kw.strip() for kw in os.getenv("OWN_ATTRIBUTE").split(",")]
+MAINSTREAM_ATTRS = [kw.strip() for kw in os.getenv("MAINSTREAM_ATTRIBUTE").split(",")]
+SKILL_KEYWORDS = [kw.strip() for kw in os.getenv("SKILL_KEYWORDS").split(",")]
 
 # タイトルフィルタ用（全表記バリエーション）
 GAME_TITLE_KEYWORDS = [kw.strip() for kw in os.getenv("GAME_TITLE_KEYWORDS").split(",")]
@@ -37,7 +39,7 @@ SEARCH_KEYWORDS = {
 
 # 1 クエリあたりの最大取得件数（YouTube API の制限に基づく）
 MAX_RESUTLS_PER_QUERY = 50
-OUTPUT_FILE   = "data/raw/competitor/youtube_competitor.csv"
+OUTPUT_FILE = "data/raw/competitor/youtube_competitor.csv"
 PROGRESS_FILE = "data/raw/competitor/progress.json"
 
 
@@ -169,17 +171,57 @@ def get_channel_subscriber_counts(youtube, channel_ids):
 
 
 # %%
-# 進捗ファイルの読み書き
+# README の進捗バッジを更新する関数
+# （進捗ファイルから現在の状態を読み込む・保存する関数もセットで実装）
 def load_progress():
     if os.path.exists(PROGRESS_FILE):
         with open(PROGRESS_FILE, "r", encoding="utf-8") as f:
-            return set(json.load(f))
-    return set()
+            data = json.load(f)
+            return set(data["done"]), data["start_date"]
+    return set(), str(date.today())
 
-def save_progress(done_keys):
+
+def save_progress(done_keys, start_date):
     os.makedirs(os.path.dirname(PROGRESS_FILE), exist_ok=True)
     with open(PROGRESS_FILE, "w", encoding="utf-8") as f:
-        json.dump(list(done_keys), f, ensure_ascii=False)
+        json.dump(
+            {"done": list(done_keys), "start_date": start_date}, f, ensure_ascii=False
+        )
+
+
+def update_readme_badge(done, total, start_date, complete=False):
+    start = date.fromisoformat(start_date)
+    days_elapsed = (date.today() - start).days
+
+    if complete:
+        badge_text = f"Complete_in_{days_elapsed}_days"
+        color = "brightgreen"
+    else:
+        if days_elapsed > 0 and done > 0:
+            est_total = math.ceil(total / (done / days_elapsed))
+        else:
+            est_total = "?"
+        est_str = str(est_total) if est_total != "?" else "%3F"
+        badge_text = f"Day_{days_elapsed}_%2F_Est._{est_str}_days_total"
+        color = "orange"
+
+    badge_url = f"https://img.shields.io/badge/Data_Collection-{badge_text}-{color}"
+    badge_md = f"![Collection Progress]({badge_url})"
+
+    readme_path = "README.md"
+    with open(readme_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    new_content = re.sub(
+        r"!\[Collection Progress\]\(https://img\.shields\.io/badge/Data_Collection-[^)]+\)",
+        badge_md,
+        content,
+    )
+
+    with open(readme_path, "w", encoding="utf-8") as f:
+        f.write(new_content)
+
+    print(f"READMEバッジ更新: {badge_text}")
 
 
 # 結果を CSV に追記する関数
@@ -197,6 +239,7 @@ FIELDNAMES = [
     "strategy_segment",
     "collected_at",
 ]
+
 
 def append_to_csv(videos, filepath):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
@@ -228,10 +271,10 @@ def main():
 
     periods = {
         "baseline": ("2019-01-01T00:00:00Z", "2024-06-30T23:59:59Z"),
-        "active":   ("2024-07-01T00:00:00Z", "2026-02-28T23:59:59Z"),
+        "active": ("2024-07-01T00:00:00Z", "2026-02-28T23:59:59Z"),
     }
 
-    done_keys = load_progress()
+    done_keys, start_date = load_progress()
     total = sum(len(q) for q in SEARCH_KEYWORDS.values()) * len(periods)
     print(f"進捗: {len(done_keys)}/{total} クエリ完了済み")
 
@@ -253,17 +296,24 @@ def main():
                 subscriber_counts = get_channel_subscriber_counts(youtube, channel_ids)
 
                 # ゲームタイトルがタイトルに含まれない動画を除外（APIの関連度検索によるノイズ除去）
-                videos = [v for v in videos if any(kw in v["title"] for kw in GAME_TITLE_KEYWORDS)]
+                videos = [
+                    v
+                    for v in videos
+                    if any(kw in v["title"] for kw in GAME_TITLE_KEYWORDS)
+                ]
 
                 for v in videos:
                     vid = v["video_id"]
                     v.update(stats.get(vid, {}))
-                    v["channel_subscriber_count"] = subscriber_counts.get(v["channel_id"], 0)
+                    v["channel_subscriber_count"] = subscriber_counts.get(
+                        v["channel_id"], 0
+                    )
                     v["collected_at"] = collected_at
 
                 append_to_csv(videos, OUTPUT_FILE)
                 done_keys.add(key)
-                save_progress(done_keys)
+                save_progress(done_keys, start_date)
+                update_readme_badge(len(done_keys), total, start_date)
                 time.sleep(1)
 
     # 全クエリ完了後: video_id で重複除去して上書き保存
@@ -282,6 +332,7 @@ def main():
 
     save_to_csv(deduped, OUTPUT_FILE)
 
+    update_readme_badge(total, total, start_date, complete=True)
     # 完了したら進捗ファイルを削除
     os.remove(PROGRESS_FILE)
     print("収集完了。")
