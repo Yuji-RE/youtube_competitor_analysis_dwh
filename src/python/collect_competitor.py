@@ -191,7 +191,7 @@ def save_progress(done_keys, start_date):
 
 def update_readme_badge(done, total, start_date, complete=False):
     start = date.fromisoformat(start_date)
-    days_elapsed = (date.today() - start).days
+    days_elapsed = (date.today() - start).days + 1
 
     if complete:
         badge_text = f"Complete_in_{days_elapsed}_days"

@@ -16,6 +16,6 @@ pipeline:
 		-f /sql/05_quality_checks.sql
 
 collect:
-	$(VENV) && python3 src/python/collect_competitor.py
+	bash -c "$(VENV) && python3 src/python/collect_competitor.py"
 
 .PHONY: db-up db-down pipeline collect
