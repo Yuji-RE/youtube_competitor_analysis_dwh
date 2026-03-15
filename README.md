@@ -1,5 +1,5 @@
 ![Status](https://img.shields.io/badge/Status-InProgress-success.svg)
-![Collection Progress](https://img.shields.io/badge/Data_Collection-Day_1_%2F_Est._5_days_total-orange)
+![Collection Progress](https://img.shields.io/badge/Data_Collection-Day_2_%2F_Est._5_days_total-orange)
 
 # コンテンツ差別化戦略の検証基盤（PostgreSQL × YouTube Data API v3）
 
