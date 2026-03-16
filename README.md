@@ -1,12 +1,12 @@
 ![Status](https://img.shields.io/badge/Status-InProgress-success.svg)
-![Collection Progress](https://img.shields.io/badge/Data_Collection-Day_2_%2F_Est._5_days_total-orange)
+![Collection Progress](https://img.shields.io/badge/Data_Collection-Day_4_%2F_Est._7_days_total-orange)
 
 # コンテンツ差別化戦略の検証基盤（PostgreSQL × YouTube Data API v3）
 
 > **⚠️ 現在進行中のプロジェクト（データ収集中）**
 >
 > このプロジェクトは、その過程でサンプルサイズ不足による信頼性の低いインサイトが得られたため、YouTube Data API v3 のクォータ制限の範囲内で収集クエリを大幅に増やし、数万件規模の生データを複数日かけて再収集中である。
-> YouTube Data API v3 の無料クォータ（1日 10,000 ユニット）の制約上、全クエリの実行完了まで**5日ほど**かかる見込みで、
+> YouTube Data API v3 の無料クォータ（1日 10,000 ユニット）の制約上、全クエリの実行完了まで**一週間ほど**かかる見込みで、
 > 毎日クォータリセット後に収集スクリプトを再実行し、進捗ファイル（`progress.json`）で中断・再開を管理している。
 > データ収集完了後、`## 4.` のインサイトセクションを最新データで更新予定。
 > 下記の内容は、再集計前に作成した暫時的な記録であることに留意されたい。
